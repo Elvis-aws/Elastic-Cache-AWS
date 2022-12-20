@@ -1,0 +1,151 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  LambdaDynamoDB
+
+  Sample SAM Template for LambdaDynamoDB
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 128
+    CodeUri: employees/
+    Runtime: python3.9
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        CUSTOM_NAME: !Ref CustomName
+        TABLE_NAME: !Ref MyDynamoDBTable
+    Tracing: Active
+  Api:
+    TracingEnabled: True
+
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: employee-app
+    Description: Hello Employees
+    Author: Elvis
+    SemanticVersion: 0.0.1
+
+Parameters:
+  CustomName:
+    Type: String
+
+Resources:
+
+  GetEmployeeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: appget.get_employee
+      Policies:
+        - AWSLambdaExecute
+        - DynamoDBReadPolicy:
+            TableName: !Ref MyDynamoDBTable
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /employee
+            Method: get
+  GetAllEmployeesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: appscan.get_all_employees
+      Policies:
+        - AWSLambdaExecute
+        - DynamoDBReadPolicy:
+            TableName: !Ref MyDynamoDBTable
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /employees
+            Method: get
+  GetAllEmployeesAddressFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: appscan.get_employees_address
+      Policies:
+        - AWSLambdaExecute
+        - DynamoDBReadPolicy:
+            TableName: !Ref MyDynamoDBTable
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /employeesAddress
+            Method: get
+  DeleteEmployeeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: appdelete.delete_employee
+      Policies:
+        - AWSLambdaExecute
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MyDynamoDBTable
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /delete
+            Method: delete
+  CreateEmployeeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: appput.put_employee
+      Policies:
+        - AWSLambdaExecute
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MyDynamoDBTable
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /create
+            Method: put
+  CreateDataBaseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: createtable.create_local_table
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /db
+            Method: get
+
+  MyDynamoDBTable: # DynamoDB Table
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    Properties:
+      TableName: EmployeesTable
+      AttributeDefinitions:
+        - AttributeName: Name
+          AttributeType: S
+        - AttributeName: Id
+          AttributeType: N
+      KeySchema:
+        - AttributeName: Name
+          KeyType: HASH # partition_key
+        - AttributeName: Id
+          KeyType: RANGE # sort_key
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  EmployeeAPI:
+    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+  GetEmployeeFunction:
+    Description: "Hello World Lambda Function ARN"
+    Value: !GetAtt GetEmployeeFunction.Arn
+  EmployeeFunctionIamRole:
+    Description: "Implicit IAM Role created for Hello World function"
+    Value: !GetAtt GetEmployeeFunctionRole.Arn
