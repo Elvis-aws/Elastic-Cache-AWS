@@ -155,6 +155,7 @@ pip3 freeze > requirements.txt
 # Docker dynamoDB local debug
 dynamodb-docker-compose up -d
 sam build --debug 
+sam build --use-container
 sam local start-api
 
 # Virtual env
@@ -179,12 +180,8 @@ sam publish
 sam sync
 sam traces
 sam validate
+sam build --use-container
 
 # Path
 echo $PATH
 export PATH=$PATH:/Users/elvisngwesse/Library/Python/3.9/bin
-
-
-export AWS_ACCESS_KEY_ID=AKIA5TEEY4RPMVIXSX2S
-export AWS_SECRET_ACCESS_KEY=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
-export AWS_DEFAULT_REGION=eu-west-2

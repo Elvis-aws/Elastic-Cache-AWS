@@ -8,10 +8,12 @@ Description: >
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 10
+    Timeout: 50
     MemorySize: 128
     CodeUri: employees/
     Runtime: python3.9
+    Layers:
+      - !Ref TempConversionDepLayer
     Architectures:
       - x86_64
     Environment:
@@ -105,16 +107,65 @@ Resources:
           Properties:
             Path: /create
             Method: put
-  CreateDataBaseFunction:
+  UpdateEmployeeFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: createtable.create_local_table
+      Handler: appupdate.update_employee
+      Policies:
+        - AWSLambdaExecute
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MyDynamoDBTable
       Events:
         HelloWorld:
           Type: Api
           Properties:
-            Path: /db
-            Method: get
+            Path: /update
+            Method: post
+  ProcessDynamoDBStreamFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: appdynamdbstream.dynamodb_trigger
+      Policies:
+        - AWSLambdaExecute
+        - AWSLambdaDynamoDBExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref MyDynamoDBTable
+      Events:
+        stream:
+          Type: DynamoDB
+          Properties:
+            Stream:
+              !GetAtt MyDynamoDBTable.StreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 100
+#            FilterCriteria:
+#              Filters:
+#                # Filter pattern to check only deleted action on DynamoDB
+#                - Pattern: '{"eventName": ["REMOVE"]}'
+  CreateThumbnailFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: appS3.create_thumbnail
+      Policies:
+        - AWSLambdaExecute
+      Events:
+        CreateThumbnailEvent:
+          Type: S3
+          Properties:
+            Bucket: !Ref SrcBucket
+            Events: s3:ObjectCreated:*
+
+  SrcBucket:
+    Type: AWS::S3::Bucket
+
+  TempConversionDepLayer:
+      Type: AWS::Serverless::LayerVersion
+      Properties:
+        ContentUri: employees/
+        CompatibleRuntimes:
+          - python3.9
+      Metadata:
+        BuildMethod: python3.9
 
   MyDynamoDBTable: # DynamoDB Table
     Type: AWS::DynamoDB::Table
@@ -122,19 +173,21 @@ Resources:
     Properties:
       TableName: EmployeesTable
       AttributeDefinitions:
-        - AttributeName: Name
+        - AttributeName: first_name
           AttributeType: S
-        - AttributeName: Id
+        - AttributeName: id
           AttributeType: N
       KeySchema:
-        - AttributeName: Name
+        - AttributeName: first_name
           KeyType: HASH # partition_key
-        - AttributeName: Id
+        - AttributeName: id
           KeyType: RANGE # sort_key
       BillingMode: PROVISIONED
       ProvisionedThroughput:
         ReadCapacityUnits: 2
         WriteCapacityUnits: 2
+      StreamSpecification:  # Enable dynamodb streaming
+        StreamViewType: NEW_AND_OLD_IMAGES
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function

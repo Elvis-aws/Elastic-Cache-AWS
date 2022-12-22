@@ -30,8 +30,8 @@ def create_local_table(event, context):
                 all_tables.append(table.name)
             if table_name in all_tables:
                 print(f"Table {table_name} already exist")
-                dax_table_context.append({"Name": table.name})
-                dax_table_context.append({"Id": table.table_id})
+                dax_table_context.append({"first_name": table.name})
+                dax_table_context.append({"id": table.table_id})
                 dax_table_context.append({"status": table.table_status})
                 Context.dynamodb_table = table.name
                 return {
@@ -45,12 +45,12 @@ def create_local_table(event, context):
         params = {
             'TableName': table_name,
             'KeySchema': [
-                {'AttributeName': 'Name', 'KeyType': 'HASH'},  # partition_key
-                {'AttributeName': 'Id', 'KeyType': 'RANGE'}  # sort_key
+                {'AttributeName': 'first_name', 'KeyType': 'HASH'},  # partition_key
+                {'AttributeName': 'id', 'KeyType': 'RANGE'}  # sort_key
             ],
             'AttributeDefinitions': [
-                {'AttributeName': 'Id', 'AttributeType': 'N'},
-                {'AttributeName': 'Name', 'AttributeType': 'S'}
+                {'AttributeName': 'id', 'AttributeType': 'N'},
+                {'AttributeName': 'first_name', 'AttributeType': 'S'}
             ],
             'ProvisionedThroughput': {
                 'ReadCapacityUnits': 2,
@@ -60,8 +60,8 @@ def create_local_table(event, context):
         table = dyn_resource.create_table(**params)
         print(f"Creating {table_name}...")
         table.wait_until_exists()
-        dax_table_context.append({"Name": table.name})
-        dax_table_context.append({"Id": table.table_id})
+        dax_table_context.append({"first_name": table.name})
+        dax_table_context.append({"id": table.table_id})
         dax_table_context.append({"status": table.table_status})
         Context.dynamodb_table = table_name
         print(f"Table {table_name} creating complete")

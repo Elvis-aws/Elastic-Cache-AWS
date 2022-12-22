@@ -8,17 +8,18 @@ import boto3
 def put_employee(event, context):  # Create Employee
     try:
         body = json.loads(event['body'])  # Extract payload from event
+        response = None
         if body is not None:
             table_name = os.getenv('TABLE_NAME')
             dyn_resource = boto3.resource('dynamodb')
             employee_table = dyn_resource.Table(table_name)
 
             payload = body
-            employee_name = payload['Name']
-            employee_id = payload['Id']
+            employee_name = payload['first_name']
+            employee_id = payload['id']
             employee_list = employee_table.query(
-                KeyConditionExpression=Key('Name').eq(employee_name)
-                                       & Key('Id').eq(employee_id))  # Query table and get employee with id
+                KeyConditionExpression=Key('first_name').eq(employee_name)
+                                       & Key('id').eq(employee_id))  # Query table and get employee with id
 
             items = employee_list['Items']  # Get Items as in DynamoDB Table
 
@@ -26,7 +27,7 @@ def put_employee(event, context):  # Create Employee
                 return {
                     "statusCode": 200,
                     "body": json.dumps({
-                        "message": f"Employee with ID: {employee_id} already exist",
+                        "message": f"Employee with id: {employee_id} and name: {employee_name} already exist",
                     }),
                 }
             else:
@@ -42,7 +43,7 @@ def put_employee(event, context):  # Create Employee
             return {
                 "statusCode": 200,
                 "body": json.dumps({
-                    "message": "Payload can not be empty",
+                    "message": f"Payload can not be empty {response}",
                 }),
             }
     except ClientError as ex:

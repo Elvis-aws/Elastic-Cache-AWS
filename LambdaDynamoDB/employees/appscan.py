@@ -7,6 +7,7 @@ import boto3
 def get_all_employees(event, context):
     try:
         page_size = 3
+        employees = None
         if event is not None:
             table_name = os.getenv('TABLE_NAME')
             dyn_resource = boto3.resource('dynamodb')
@@ -34,7 +35,7 @@ def get_all_employees(event, context):
             return {
                 "statusCode": 400,
                 "body": json.dumps({
-                    "message": "Query string must have parameter",
+                    "message": f"Query string must have parameter {employees}",
                 }),
             }
 
