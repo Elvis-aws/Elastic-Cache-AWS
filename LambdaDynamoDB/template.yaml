@@ -14,8 +14,6 @@ Globals:
     Runtime: python3.9
     Layers:
       - !Ref TempConversionDepLayer
-    Architectures:
-      - x86_64
     Environment:
       Variables:
         CUSTOM_NAME: !Ref CustomName
@@ -41,6 +39,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: appget.get_employee
+      Architectures:
+        - x86_64
       Policies:
         - AWSLambdaExecute
         - DynamoDBReadPolicy:
@@ -55,6 +55,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: appscan.get_all_employees
+      Architectures:
+        - x86_64
       Policies:
         - AWSLambdaExecute
         - DynamoDBReadPolicy:
@@ -69,6 +71,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: appscan.get_employees_address
+      Architectures:
+        - x86_64
       Policies:
         - AWSLambdaExecute
         - DynamoDBReadPolicy:
@@ -83,6 +87,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: appdelete.delete_employee
+      Architectures:
+        - x86_64
       Policies:
         - AWSLambdaExecute
         - DynamoDBCrudPolicy:
@@ -97,6 +103,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: appput.put_employee
+      Architectures:
+        - x86_64
       Policies:
         - AWSLambdaExecute
         - DynamoDBCrudPolicy:
@@ -111,6 +119,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: appupdate.update_employee
+      Architectures:
+        - x86_64
       Policies:
         - AWSLambdaExecute
         - DynamoDBCrudPolicy:
@@ -125,6 +135,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: appdynamdbstream.dynamodb_trigger
+      Architectures:
+        - x86_64
       Policies:
         - AWSLambdaExecute
         - AWSLambdaDynamoDBExecutionRole
@@ -146,6 +158,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: appS3.create_thumbnail
+      Architectures:
+        - x86_64
       Policies:
         - AWSLambdaExecute
       Events:
@@ -157,11 +171,23 @@ Resources:
 
   SrcBucket:
     Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LoggingConfiguration:
+        DestinationBucketName: !Ref AccessLogBucket
+
+  AccessLogBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: LogDeliveryWrite
 
   TempConversionDepLayer:
       Type: AWS::Serverless::LayerVersion
       Properties:
-        ContentUri: employees/
+        ContentUri: dependencies/
         CompatibleRuntimes:
           - python3.9
       Metadata:

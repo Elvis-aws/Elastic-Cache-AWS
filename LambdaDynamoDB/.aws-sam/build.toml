@@ -8,12 +8,12 @@ architecture = "x86_64"
 handler = "appget.get_employee"
 manifest_hash = ""
 packagetype = "Zip"
-functions = ["GetEmployeeFunction", "GetAllEmployeesFunction", "GetAllEmployeesAddressFunction", "DeleteEmployeeFunction", "CreateEmployeeFunction", "UpdateEmployeeFunction", "ProcessDynamoDBStreamFunction", "CreateThumbnailFunction", "CreateDataBaseFunction"]
+functions = ["GetEmployeeFunction", "GetAllEmployeesFunction", "GetAllEmployeesAddressFunction", "DeleteEmployeeFunction", "CreateEmployeeFunction", "UpdateEmployeeFunction", "ProcessDynamoDBStreamFunction", "CreateThumbnailFunction"]
 
 [layer_build_definitions]
-[layer_build_definitions.f653adbc-c331-4b4a-87c9-d9dd9fd9f8a3]
+[layer_build_definitions.ff8b457d-a4b2-4347-a5ab-bc0549bc0e59]
 layer_name = "TempConversionDepLayer"
-codeuri = "/Users/elvisngwesse/Desktop/AWS-Repos/LambdaDynamoDB/LambdaDynamoDB/employees"
+codeuri = "/Users/elvisngwesse/Desktop/AWS-Repos/LambdaDynamoDB/LambdaDynamoDB/dependencies"
 build_method = "python3.9"
 compatible_runtimes = ["python3.9"]
 architecture = "x86_64"
