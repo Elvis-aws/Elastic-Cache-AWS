@@ -4,8 +4,15 @@ from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key, Attr
 import boto3
 
+"""
+- Query results are divided into sets or pages up to 1MB
+- You need to find out if there are remaining results after a query
+- The query result contains the LastEvaluatedKey pointing to the last processed key
+- We achieve our query result when we do not have the LastEvaluatedKey in the result
+"""
 
-def get_employee(event, context):
+
+def get_employees(event, context):
     try:
         person_id = event['queryStringParameters']['id']
         person_name = event['queryStringParameters']['first_name']
@@ -16,10 +23,18 @@ def get_employee(event, context):
             dyn_resource = boto3.resource('dynamodb')
             employee_table = dyn_resource.Table(table_name)
             # Loop through all the items and load each
-            employee = employee_table.query(
-                KeyConditionExpression=Key('first_name').eq(person_name) & Key('id').eq(int(person_id)),
+            result = employee_table.query(
+                KeyConditionExpression=Key('first_name').eq(person_name),
+
             )
-            if employee['Count'] == 0:
+            while 'LastEvaluatedKey' in result:
+                key = result['LastEvaluatedKey']
+                last_evaluated_key = key
+                result = employee_table.query(
+                    KeyConditionExpression=Key('first_name').eq(person_name),
+                    ExclusiveStartKey=last_evaluated_key
+                )
+            if result['Count'] == 0:
                 return {
                     "statusCode": 200,
                     "body": json.dumps({
@@ -30,7 +45,7 @@ def get_employee(event, context):
                 return {
                     "statusCode": 200,
                     "body": json.dumps({
-                        "message": f"Successfully retrieved Employee: {employee['Items'][0]}",
+                        "message": f"Successfully retrieved Employee: {result}",
                     }),
                 }
         else:
@@ -49,4 +64,5 @@ def get_employee(event, context):
                 "message": f"{ex}",
             }),
         }
+
 

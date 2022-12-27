@@ -51,6 +51,23 @@ Resources:
           Properties:
             Path: /employee
             Method: get
+  GetEmployeesByPaginationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: apppagination.get_employees
+      Architectures:
+        - x86_64
+      Policies:
+        - AWSLambdaExecute
+        - DynamoDBReadPolicy:
+            TableName: !Ref MyDynamoDBTable
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /pagination
+            Method: get
+
   GetAllEmployeesFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -82,6 +99,38 @@ Resources:
           Type: Api
           Properties:
             Path: /employeesAddress
+            Method: get
+  GetAllEmployeesByDepartmentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: appscan.get_employees_department
+      Architectures:
+        - x86_64
+      Policies:
+        - AWSLambdaExecute
+        - DynamoDBReadPolicy:
+            TableName: !Ref MyDynamoDBTable
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /employeesByDepartment
+            Method: get
+  GetAllEmployeesByItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: appscan.get_employees_department_by_item_size
+      Architectures:
+        - x86_64
+      Policies:
+        - AWSLambdaExecute
+        - DynamoDBReadPolicy:
+            TableName: !Ref MyDynamoDBTable
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /employeesByItem
             Method: get
   DeleteEmployeeFunction:
     Type: AWS::Serverless::Function
@@ -216,12 +265,9 @@ Resources:
         StreamViewType: NEW_AND_OLD_IMAGES
 
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   EmployeeAPI:
     Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/employee/"
   GetEmployeeFunction:
     Description: "Hello World Lambda Function ARN"
     Value: !GetAtt GetEmployeeFunction.Arn
