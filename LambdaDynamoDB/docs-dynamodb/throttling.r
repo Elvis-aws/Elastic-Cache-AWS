@@ -1,8 +1,7 @@
 
 
-
 *******************
-DynamoDb Throtlling
+DynamoDb Throttling
 *******************
     - If we exceed provisioned WCU or RCU, we get ProvisionedThroughputExceededException
     - Hot partitions may be the issue

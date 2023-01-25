@@ -206,7 +206,7 @@ Resources:
             Path: /update
             Method: post
 ####################################
-# DynamoDB Stream function
+# docs-dynamodb Stream function
 ####################################
   ProcessDynamoDBStreamFunction:
     Type: AWS::Serverless::Function
@@ -221,7 +221,7 @@ Resources:
             TableName: !Ref MyDynamoDBTable
       Events:
         stream:
-          Type: DynamoDB
+          Type: docs-dynamodb
           Properties:
             Stream:
               !GetAtt MyDynamoDBTable.StreamArn
@@ -229,7 +229,7 @@ Resources:
             BatchSize: 100
 #            FilterCriteria:
 #              Filters:
-#                # Filter pattern to check only deleted action on DynamoDB
+#                # Filter pattern to check only deleted action on docs-dynamodb
 #                - Pattern: '{"eventName": ["REMOVE"]}'
 
 ####################################
@@ -280,10 +280,10 @@ Resources:
       Metadata:
         BuildMethod: python3.9
 ####################################
-# DynamoDB Table
+# docs-dynamodb Table
 ####################################
   MyDynamoDBTable:
-    Type: AWS::DynamoDB::Table
+    Type: AWS::docs-dynamodb::Table
     DeletionPolicy: Delete
     Properties:
       TableName: EmployeesTable

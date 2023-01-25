@@ -21,7 +21,7 @@ def put_employee(event, context):  # Create Employee
                 KeyConditionExpression=Key('first_name').eq(employee_name)
                                        & Key('id').eq(employee_id))  # Query table and get employee with id
 
-            items = employee_list['Items']  # Get Items as in DynamoDB Table
+            items = employee_list['Items']  # Get Items as in docs-dynamodb Table
 
             if len(items) != 0:
                 return {

@@ -1,8 +1,9 @@
 
+
 *****
 Redis
 *****
-    - Multi AZ with auto-failover 
+    - Multi AZ with auto-fail-over
     - Read replicas to scale reads 
     - Data durability using AOF persistence 
     - Backup and restore features 

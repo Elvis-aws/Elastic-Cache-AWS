@@ -1,9 +1,10 @@
 
+
 ****************************
 Multi-AZ (Disaster recovery)
 ****************************
-    - snchronous replication
-    - One DNS name - automatic failover to standby
+    - Synchronous replication
+    - One DNS name - automatic fail-over to standby
     - Not used for scaling 
     - Replica can not be used for read 
     - You can set your read replicas as multi-az 

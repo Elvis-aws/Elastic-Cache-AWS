@@ -6,7 +6,7 @@ import json
 
 def create_local_table(event, context):
     """
-    Creates a DynamoDB table.
+    Creates a docs-dynamodb table.
 
     param dyn_resource: Either a Boto3 or DAX resource.
     :return: The newly created table.

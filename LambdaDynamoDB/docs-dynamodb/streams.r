@@ -25,28 +25,14 @@ DynamoDB Stream
         - Near-real time, events are available in the stream within less than a second from the moment of the 
           write operation
         - Deduplicated, each modification corresponds to exactly one record within the stream
-        - Noop operations, like PutItem or UpdateItem that do not change the record are ignored
+        - No operations, like PutItem or UpdateItem that do not change the record are ignored
 ***********************
 DynamoDB Lambda Trigger
 ***********************
     - DynamoDB Streams work particularly well with AWS Lambda due to its event-driven nature
     - They scale to the amount of data pushed through the stream and streams are only invoked if theres data 
       that needs to be processed
-"""
-    functions:
-  compute:
-    handler: handler.compute
-    events:
-      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
-      - stream:
-          type: dynamodb
-          arn:
-            Fn::GetAtt: [MyDynamoDbTable, StreamArn]
-      - stream:
-          type: dynamodb
-          arn:
-            Fn::ImportValue: MyExportedDynamoDbStreamArnId
-"""
+
 ********************************
 Filtering DynamoDB Stream events
 ********************************

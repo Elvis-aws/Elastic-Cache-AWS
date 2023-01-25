@@ -5,7 +5,7 @@ Description: AWS ElatiCache for Redis - Cluster Mode Demonstration
 Parameters:
   ProjectName:
     Type: String
-    Default: aws-elasticache-cluster-mode
+    Default: cluster-mode
 
   ElasticacheInstanceClass:
     Type: String
