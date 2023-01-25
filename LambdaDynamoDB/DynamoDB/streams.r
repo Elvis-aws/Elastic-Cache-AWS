@@ -1,6 +1,5 @@
 
 
-
 ***************
 DynamoDB Stream
 ***************
@@ -9,7 +8,7 @@ DynamoDB Stream
     - Once enabled, whenever you perform a write operation to the DynamoDB table, like put, update or delete, a 
       corresponding event containing information like which record was changed and what was changed will be saved 
       to the Stream in near-real time
-    - Streams consists of Shards
+    - Streams consists of Shards  (https://www.youtube.com/watch?v=iHNovZUZM3A)
     - Each Shard is a group of Records, where each record corresponds to a single data modification in the table 
       related to that stream
     - Shards are automatically created and deleted by AWS
@@ -65,89 +64,4 @@ aws lambda create-event-source-mapping \
 --filter-criteria '{"Filters": [{"Pattern": "{\"age\": [{\"numeric\": [\"<\", 25]}]}"}]}'
 
 """
-
-
-
-
-
-
-
-# SAM template for Lambda fn Event-filtering with DynamoDB Streams
-
-AWSTemplateFormatVersion: 2010-09-09
-Description: >-
-  SAM template for Lambda fn Event-filtering with DynamoDB Streams
-
-Transform:
-- AWS::Serverless-2016-10-31
-
-Resources:
-  putItemTriggerFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: src/handlers/
-      Handler: dynamodb-insert-trigger.putItemTriggerHandler
-      Runtime: nodejs14.x
-      Architectures:
-        - x86_64
-      MemorySize: 128
-      Timeout: 100
-      Description: DynamoDB put event trigger.
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref DynamoDBTable
-      Events:
-        DynamoDBTable:
-          Type: DynamoDB
-          Properties:
-            Stream:
-              !GetAtt DynamoDBTable.StreamArn
-            StartingPosition: TRIM_HORIZON
-            BatchSize: 100
-            FilterCriteria:
-              Filters:
-                  # Filter pattern to check only inserted action on DynamoDB
-                - Pattern: '{"eventName": ["INSERT"]}'
-
-  deleteItemTriggerFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: src/handlers/
-      Handler: dynamodb-delete-trigger.deleteItemTriggerHandler
-      Runtime: nodejs14.x
-      Architectures:
-        - x86_64
-      MemorySize: 128
-      Timeout: 100
-      Description: DynamoDB delete event trigger.
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref DynamoDBTable
-      Events:
-        DynamoDBTable:
-          Type: DynamoDB
-          Properties:
-            Stream:
-              !GetAtt DynamoDBTable.StreamArn
-            StartingPosition: TRIM_HORIZON
-            BatchSize: 100
-            FilterCriteria:
-              Filters:
-                  # Filter pattern to check only deleted action on DynamoDB
-                - Pattern: '{"eventName": ["REMOVE"]}'
-
-  DynamoDBTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      AttributeDefinitions:
-        - AttributeName: id
-          AttributeType: S
-      KeySchema:
-        - AttributeName: id
-          KeyType: HASH
-      ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
-      StreamSpecification:
-        StreamViewType: NEW_AND_OLD_IMAGES 
 

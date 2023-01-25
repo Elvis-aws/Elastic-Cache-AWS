@@ -3,11 +3,11 @@ version = 0.1
 [default.deploy]
 [default.deploy.parameters]
 stack_name = "employee-app"
-s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1itbpbaza7j6c"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1kjqzy0abzdhz"
 s3_prefix = "employee-app"
 region = "eu-west-2"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 disable_rollback = true
-parameter_overrides = "CustomName=\"sam-url\""
+parameter_overrides = "CustomName=\"Elvis\""
 image_repositories = []

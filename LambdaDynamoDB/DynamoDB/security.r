@@ -19,4 +19,4 @@ Global Tables
 **************
 DynamoDB Local
 **************
-    - Develope and test apps locally
+    - Develop and test apps locally

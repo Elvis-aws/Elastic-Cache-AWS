@@ -34,7 +34,9 @@ Parameters:
     Type: String
 
 Resources:
-
+####################################
+# Employees function
+####################################
   GetEmployeeFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -51,6 +53,9 @@ Resources:
           Properties:
             Path: /employee
             Method: get
+####################################
+# Employee pagination function
+####################################
   GetEmployeesByPaginationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -67,7 +72,9 @@ Resources:
           Properties:
             Path: /pagination
             Method: get
-
+####################################
+# Get all employees function
+####################################
   GetAllEmployeesFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -84,6 +91,9 @@ Resources:
           Properties:
             Path: /employees
             Method: get
+####################################
+# Employees by address function
+####################################
   GetAllEmployeesAddressFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -100,6 +110,9 @@ Resources:
           Properties:
             Path: /employeesAddress
             Method: get
+####################################
+# Employees by department function
+####################################
   GetAllEmployeesByDepartmentFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -116,6 +129,9 @@ Resources:
           Properties:
             Path: /employeesByDepartment
             Method: get
+####################################
+# All items function
+####################################
   GetAllEmployeesByItemFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -132,6 +148,9 @@ Resources:
           Properties:
             Path: /employeesByItem
             Method: get
+####################################
+# Delete employee function
+####################################
   DeleteEmployeeFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -148,6 +167,9 @@ Resources:
           Properties:
             Path: /delete
             Method: delete
+####################################
+# Create employee function
+####################################
   CreateEmployeeFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -164,6 +186,9 @@ Resources:
           Properties:
             Path: /create
             Method: put
+####################################
+# Update employee function
+####################################
   UpdateEmployeeFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -180,6 +205,9 @@ Resources:
           Properties:
             Path: /update
             Method: post
+####################################
+# DynamoDB Stream function
+####################################
   ProcessDynamoDBStreamFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -203,6 +231,10 @@ Resources:
 #              Filters:
 #                # Filter pattern to check only deleted action on DynamoDB
 #                - Pattern: '{"eventName": ["REMOVE"]}'
+
+####################################
+# Thumbnail function
+####################################
   CreateThumbnailFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -217,7 +249,9 @@ Resources:
           Properties:
             Bucket: !Ref SrcBucket
             Events: s3:ObjectCreated:*
-
+####################################
+# S3 Source bucket
+####################################
   SrcBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -227,12 +261,16 @@ Resources:
               SSEAlgorithm: AES256
       LoggingConfiguration:
         DestinationBucketName: !Ref AccessLogBucket
-
+####################################
+# S3 bucket login bucket
+####################################
   AccessLogBucket:
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: LogDeliveryWrite
-
+####################################
+# Lambda layers
+####################################
   TempConversionDepLayer:
       Type: AWS::Serverless::LayerVersion
       Properties:
@@ -241,8 +279,10 @@ Resources:
           - python3.9
       Metadata:
         BuildMethod: python3.9
-
-  MyDynamoDBTable: # DynamoDB Table
+####################################
+# DynamoDB Table
+####################################
+  MyDynamoDBTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Delete
     Properties:

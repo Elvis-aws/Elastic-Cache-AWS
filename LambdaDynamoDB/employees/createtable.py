@@ -20,11 +20,7 @@ def create_local_table(event, context):
         dax_table_context = []
         all_tables = []
         if dyn_resource is None:
-            dyn_resource = boto3.resource('dynamodb',
-                                          aws_access_key_id="AKIA5TEEY4RPMVIXSX2S",
-                                          aws_secret_access_key="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",
-                                          region_name='eu-west-2',
-                                          endpoint_url='http://localhost:8000')
+            dyn_resource = boto3.resource('dynamodb', endpoint_url='http://localhost:8000')
             Context.dynamodb_local = dyn_resource
             for table in dyn_resource.tables.all():
                 all_tables.append(table.name)

@@ -30,7 +30,7 @@ DynamoDB APIs
             - This is more efficient than calling PutItem multiple times because your 
             application only needs a single network round trip to write the items
             - You can also use BatchWriteItem for deleting multiple items from one or more tables
-            - Up to 16MB of data written, up to 400 KB of data per item
+            - Up to 16 MB of data written, up to 400 KB of data per item
             - Cant update items
     ************
     Reading data
@@ -45,7 +45,7 @@ DynamoDB APIs
               a single network round trip to read the items
             - Returns items from one or more tables
             - Up to 100 items, up to 16 MB of data
-            - Items are retrived in parallel to minimize latency
+            - Items are retrieved in parallel to minimize latency
         - Query
             - Retrieves all items that have a specific partition key
             - You must specify the partition key value
