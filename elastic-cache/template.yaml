@@ -1,0 +1,367 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AWS ElatiCache for Redis
+
+Parameters:
+############################################
+############### DB ENGINES #################
+############################################
+  DBEngineMemcached:
+    Type: String
+    Default: memcached
+
+  DBEngineRedis:
+    Type: String
+    Default: redis
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 128
+    Runtime: python3.9
+Resources:
+#############################################
+##################### VPC ###################
+#############################################
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/24
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+#############################################
+############ LAMBDA SECURITY GROUP ###########
+#############################################
+  FunctionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-FunctionSecurityGroup
+      GroupDescription: Deny All.
+      VpcId: !Ref VPC
+#############################################
+################# SUBNET ONE ################
+#############################################
+  CacheSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: 10.0.0.0/25
+      VpcId: !Ref VPC
+#############################################
+################# SUBNET TWO ################
+#############################################
+  CacheSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: 10.0.0.128/25
+      VpcId: !Ref VPC
+#############################################
+############# SECURITY GROUP ################
+#############################################
+  CacheSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-CacheSecurityGroup
+      GroupDescription: Allow Redis from Instance and Function.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 11211
+          ToPort: 11211
+          CidrIp: 0.0.0.0/0
+#############################################
+############# SECURITY GROUP ################
+#############################################
+  EndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-EndpointSecurityGroup
+      GroupDescription: Allow HTTPS from InstanceSecurityGroup.
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 43
+          ToPort: 43
+          CidrIp: 0.0.0.0/0
+#############################################
+############# SECURITY GROUP ################
+#############################################
+  VPCSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: My Elasticache Security Group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+#############################################
+############### SUBNET GROUP ################
+#############################################
+  SubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      CacheSubnetGroupName: !Sub ${AWS::StackName}-subnetgroup
+      Description: !Sub ${AWS::StackName}-SubnetGroup
+      SubnetIds:
+        - !Ref CacheSubnet1
+        - !Ref CacheSubnet2
+#############################################
+########## REPLICATION GROUP ################
+#############################################
+  RedisReplicationGroup:
+    Type: AWS::ElastiCache::ReplicationGroup
+    Properties:
+      AutoMinorVersionUpgrade: true
+      CacheNodeType: cache.t2.micro
+#      CacheParameterGroupName: !Sub ${AWS::StackName}-parameterGroupName
+      CacheSubnetGroupName: !Ref SubnetGroup
+      Engine: !Ref DBEngineRedis
+      EngineVersion: 7.0
+      AutomaticFailoverEnabled: 'true'
+      MultiAZEnabled: true
+      NodeGroupConfiguration:
+        - PrimaryAvailabilityZone: !Select [ 0, !GetAZs '' ]
+          ReplicaAvailabilityZones:
+            - !Select [ 1, !GetAZs '' ]
+          ReplicaCount: 1
+      Port: 6379
+      ReplicationGroupDescription: !Sub ${AWS::StackName}-ReplicationGroup
+      ReplicationGroupId: !Sub ${AWS::StackName}-replicationgroup
+      SecurityGroupIds:
+        - !Ref CacheSecurityGroup
+############################################
+######### ELASTIC CACHE MEMCACHED ##########
+############################################
+  MemcachedCluster:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      AZMode: single-az
+      CacheNodeType: cache.t2.micro
+      Engine: !Ref DBEngineMemcached
+      NumCacheNodes: 3
+      VpcSecurityGroupIds:
+        - !Ref VPCSecurityGroup
+      PreferredAvailabilityZones:
+        - !Select [ 0, !GetAZs '' ]
+############################################
+############### LAMBDA ROLE ################
+############################################
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+############################################
+############## PUT FUNCTION ################
+############################################
+  LambdaFunctionPutCache:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: app.put_in_cache
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          PRIMARY_ENDPOINT_ADDRESS: !GetAtt RedisReplicationGroup.ReaderEndPoint.Address
+          READER_ENDPOINT_ADDRESS: !GetAtt RedisReplicationGroup.ReaderEndPoint.Port
+          REDIS_PORT: 6379
+      Events:
+        SNSEvent:
+          Type: Api
+          Properties:
+            Path: /lambda
+            Method: post
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref FunctionSecurityGroup
+        SubnetIds:
+          - !Ref CacheSubnet1
+############################################
+############## GET FUNCTION ################
+############################################
+  LambdaFunctionGetCache:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: app.get_from_cache
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          PRIMARY_ENDPOINT_ADDRESS: !GetAtt RedisReplicationGroup.PrimaryEndPoint.Address
+          READER_ENDPOINT_ADDRESS: !GetAtt RedisReplicationGroup.ReaderEndPoint.Address
+          REDIS_PORT: 6379
+      Events:
+        SNSEvent:
+          Type: Api
+          Properties:
+            Path: /lambda
+            Method: get
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref FunctionSecurityGroup
+        SubnetIds:
+          - !Ref CacheSubnet2
+############################################
+############################################
+############################################
+######## AD API GATEWAY RESOURCES ##########
+############################################
+######### API GATEWAY API RESOURCE #########
+############################################
+############################################
+############################################
+  ApiGatewayRestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: lambda-api
+      ApiKeySourceType: HEADER
+      Description: An API Gateway with a Lambda Integration
+      EndpointConfiguration:
+        Types:
+          - EDGE
+############################################
+########## API GATEWAY RESOURCE ############
+############################################
+  ApiGatewayResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+      PathPart: lambda
+      RestApiId: !Ref ApiGatewayRestApi
+############################################
+######### API GATEWAY METHOD POST ##########
+############################################
+  ApiGatewayMethodPost:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      HttpMethod: POST
+      Integration:
+        ConnectionType: INTERNET
+        Credentials: !GetAtt ApiGatewayIamRole.Arn
+        IntegrationHttpMethod: POST
+        PassthroughBehavior: WHEN_NO_MATCH
+        TimeoutInMillis: 29000
+        Type: AWS_PROXY
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionPutCache.Arn}/invocations
+      OperationName: lambda
+      ResourceId: !Ref ApiGatewayResource
+      RestApiId: !Ref ApiGatewayRestApi
+# Note: You notice that this Method is rather simple. It does not have IntegrationResponses, RequestTemplates,
+# or MethodResponses properties. This is because this Method is purely proxying the client request and Lambda function
+# response. Therefore, there is no need to define models or templates for these entities.
+############################################
+######### API GATEWAY METHOD GET ##########
+############################################
+  ApiGatewayMethodGet:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      HttpMethod: GET
+      Integration:
+        ConnectionType: INTERNET
+        Credentials: !GetAtt ApiGatewayIamRole.Arn
+        IntegrationHttpMethod: GET
+        PassthroughBehavior: WHEN_NO_MATCH
+        TimeoutInMillis: 29000
+        Type: AWS_PROXY
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionGetCache.Arn}/invocations
+      OperationName: lambda
+      ResourceId: !Ref ApiGatewayResource
+      RestApiId: !Ref ApiGatewayRestApi
+############################################
+############ API GATEWAY MODEL #############
+############################################
+  ApiGatewayModel:
+    Type: AWS::ApiGateway::Model
+    Properties:
+      ContentType: application/json
+      RestApiId: !Ref ApiGatewayRestApi
+      Schema: { }
+############################################
+############ API GATEWAY STAGE #############
+############################################
+  ApiGatewayStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      DeploymentId: !Ref ApiGatewayDeployment
+      Description: Lambda API Stage v0
+      RestApiId: !Ref ApiGatewayRestApi
+      StageName: Dev
+############################################
+######### API GATEWAY DEPLOYMENT ###########
+############################################
+  ApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - ApiGatewayMethodGet
+      - ApiGatewayMethodPost
+    Properties:
+      Description: Lambda API Deployment
+      RestApiId: !Ref ApiGatewayRestApi
+############################################
+############### API GATEWAY ################
+############################################
+  ApiGatewayIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: '/'
+      Policies:
+        - PolicyName: LambdaAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: lambda:*
+                Resource:
+                - !GetAtt LambdaFunctionGetCache.Arn
+                - !GetAtt LambdaFunctionPutCache.Arn
+############################################
+################## OUT PUT #################
+############################################
+Outputs:
+  # This output is only applicable if the cache engine is set to Redis
+  RedisReaderEndpointAddress:
+    Description: The Redis reader endpoint address of the cache.
+    Value: !GetAtt RedisReplicationGroup.ReaderEndPoint.Address
+  RedisWriterEndpointAddress:
+    Description: The Redis writer endpoint address of the cache.
+    Value: !GetAtt RedisReplicationGroup.PrimaryEndPoint.Address
+  ApiGatewayUrl:
+    Description: URL for the API Gateway endpoint
+    Value: !Join
+      - ''
+      - - https://
+        - !Ref ApiGatewayRestApi
+        - .execute-api.
+        - !Ref AWS::Region
+        - .amazonaws.com/
+        - !Ref ApiGatewayStage
+###############################################

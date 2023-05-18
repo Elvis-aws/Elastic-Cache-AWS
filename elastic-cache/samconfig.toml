@@ -1,0 +1,13 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "elastic-cache-app"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1cixq0vp7d4xn"
+s3_prefix = "elastic-cache-app"
+region = "eu-west-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+disable_rollback = true
+parameter_overrides = "DBEngineMemcached=\"memcached\" DBEngineRedis=\"redis\""
+image_repositories = []
